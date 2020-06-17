@@ -1,3 +1,1 @@
-# Description
 
-Simple distortion plugin.
