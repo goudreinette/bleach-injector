@@ -2,97 +2,13 @@
 extern crate vst;
 extern crate vst_gui;
 
-use std::f32::consts::PI;
 use std::sync::{Arc, Mutex};
 
 use vst::buffer::AudioBuffer;
 use vst::editor::Editor;
 use vst::plugin::{Category, Plugin, Info};
 
-const HTML: &'static str = r#"
-    <!doctype html>
-    <head>
-        <meta charset="utf-8">
-        <meta http-equiv="x-ua-compatible" content="ie=edge">
-        <title></title>
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.0.0/p5.min.js"></script>
-
-
-        <style type="text/css">
-        body {
-            margin: 0;
-        }
-        </style>
-    </head>
-
-        <script>
-            let draggingSlider = false
-            let hoveringSlider = false
-            let sliderValue = 0 // normalized, 0-1 
-            let startY = 50
-            let endY
-
-            function setup() {
-                createCanvas(400, 600);
-                endY = height*.25
-            }
-
-
-            function draw() {
-                // Update dragging
-                if (mouseX > width/2-40 && mouseX < width/2+40) {
-                    if (mouseIsPressed) {
-                        sliderValue = map(mouseY, startY, endY, 0, 1, true)
-                        external.invoke("setThreshold " + (1.01 - sliderValue));
-                    }
-                    hoveringSlider = true
-                } else {
-                    hoveringSlider = false
-                }
-                
-                
-                // Drawing
-                background(220);
-                strokeWeight(2);
-
-                // butt
-                fill('pink')
-                ellipse(width / 2, height - 50, 500, 300)
-
-                // syringe
-                fill('white')
-                rect(width / 2 - 50, height * .25, 100, height / 2)
-                rect(width / 2 - 25, height * .75, 50, 20)
-                
-                // syringe top/handle
-                fill(hoveringSlider ? '#eee' : 'white')
-                rect(width / 2 - 40, map(sliderValue, 0, 1, startY, endY) - 20, 80, 10)
-                rect(width / 2 - 30, map(sliderValue, 0, 1, startY, endY) - 10, 60, 10)
-                
-                // stick inside
-                    fill('white')
-                rect(width/2 - 20, map(sliderValue, 0, 1, startY, endY), 40, 300)
-
-                // syringe contents
-                fill('aqua')
-                rect(width / 2 - 50, height * .5 + map(sliderValue, 0, 1, 0, 100), 100, height * .25 - map(sliderValue, 0, 1, 0, 100))
-                
-                line(width / 2 - 50, height*.25, width / 2 + 50, height*.25)
-                
-                // bubbles
-
-                // stripes
-                for (let i = height * 0.25; i < height * 0.75; i += 20) {
-                    line(width / 2 - 50, i, width / 2 - 40, i)
-                }
-
-
-                line(width / 2, height * .75 + 20, width / 2, height * .75 + 100)
-            }
-        </script>
-    </html>
-"#;
+const HTML: &'static str = include_str!("./gui.html");
 
 struct Parameters {
     pub threshold: f32
@@ -157,6 +73,7 @@ impl Plugin for BleachInjector {
             inputs: 2,
             outputs: 2,
             parameters: 0,
+            category: Category::Effect,
 
             ..Info::default()
         }
