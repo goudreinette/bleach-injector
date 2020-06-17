@@ -6,6 +6,7 @@ authors = ["Rein van der Woerd <reinvanderwoerd@me.com>"]
 [dependencies]
 vst = "^0.2"
 lerp = "0.2.0"
+libmath = "0.2.1"
 vst-gui = {git = "https://github.com/mikesoylu/rust-vst-gui"}
 
 [lib]

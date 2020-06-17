@@ -1,12 +1,18 @@
 #[macro_use]
 extern crate vst;
 extern crate vst_gui;
+extern crate lerp;
+extern crate math;
 
 use std::sync::{Arc, Mutex};
+use std::f32::consts::PI;
+use math::round;
 
 use vst::buffer::AudioBuffer;
 use vst::editor::Editor;
 use vst::plugin::{Category, Plugin, Info};
+
+use lerp::Lerp;
 
 const HTML: &'static str = include_str!("./gui.html");
 
@@ -43,6 +49,7 @@ fn create_javascript_callback(
 
 struct BleachInjector {
     sample_rate: f32,
+    time: f32,
     // We access this object both from a UI thread and from an audio processing
     // thread.
     params: Arc<Mutex<Parameters>>,
@@ -58,6 +65,7 @@ impl Default for BleachInjector {
 
         BleachInjector {
             sample_rate: 44100.0,
+            time: 0.0,
             params: params.clone(),
         }
     }
@@ -86,18 +94,19 @@ impl Plugin for BleachInjector {
     fn process(&mut self, buffer: &mut AudioBuffer<f32>) {
         let params = self.params.lock().unwrap();
 
+        let per_step = 1.0 / self.sample_rate;
+
         for (input, output) in buffer.zip() {
             // For each input sample and output sample in buffer
             for (in_frame, out_frame) in input.into_iter().zip(output.into_iter()) {
+                self.time += per_step;
                 let distorted;
+                let tremolo = (self.time*300.0).sin() * 0.5 + 0.5;
+                 
+                distorted = in_frame.min(params.threshold).max(-params.threshold) / (params.threshold * 1.25);
 
-                if *in_frame >= 0.0 {
-                    distorted = in_frame.min(params.threshold) / params.threshold;
-                } else {
-                    distorted = in_frame.max(-params.threshold) / params.threshold;
-                }
-
-                *out_frame = distorted;
+                *out_frame = round::ceil(distorted as f64, (params.threshold * 3.0) as i8) as f32;
+                // * (1.0 - tremolo * params.threshold);
             }
         }
     }

@@ -23,6 +23,9 @@
         let startY = 50
         let endY
 
+        let bubbles = []
+
+
         function setup() {
             createCanvas(400, 600);
             endY = height * .25
@@ -33,12 +36,20 @@
             // Update dragging
             if (mouseX > width / 2 - 40 && mouseX < width / 2 + 40) {
                 if (mouseIsPressed) {
-                    sliderValue = map(mouseY, startY, endY, 0, 1, true)
-                    external.invoke("setThreshold " + (1.01 - sliderValue));
+                    draggingSlider = true;
                 }
                 hoveringSlider = true
             } else {
                 hoveringSlider = false
+            }
+
+            if (!mouseIsPressed) {
+                draggingSlider = false
+            }
+
+            if (draggingSlider) {
+                sliderValue = map(mouseY, startY, endY, 0, 1, true)
+                    // external.invoke("setThreshold " + (1.01 - sliderValue));
             }
 
 
@@ -71,7 +82,28 @@
             line(width / 2 - 50, height * .25, width / 2 + 50, height * .25)
 
             // bubbles
+            if (bubbles.length < 30 && random() > 0.9) {
+                bubbles.push({
+                    x: random(width/2 - 48, width/2 + 48),
+                    y: height * .75,
+                    vy: random(-0.5, -2),
+                    vx: random(-0.1, 0.1),
+                    r: 5
+                })
+            }
 
+            fill('ragba(255,255,255,1)')
+            strokeWeight(0)
+            bubbles.forEach((bubble, i) => {
+                bubble.y += bubble.vy;
+
+                if (bubble.y < height * .5 + map(sliderValue, 0, 1, 0, 100) + 5) {
+                    bubbles.splice(i, 1)
+                }
+                ellipse(bubble.x, bubble.y, 5)
+            })
+
+            strokeWeight(2)
             // stripes
             for (let i = height * 0.25; i < height * 0.75; i += 20) {
                 line(width / 2 - 50, i, width / 2 - 40, i)
