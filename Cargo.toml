@@ -2,12 +2,22 @@
 name = "bleach-injector"
 version = "0.1.0"
 authors = ["Rein van der Woerd <reinvanderwoerd@me.com>"]
+homepage = "www.klokpack6ix.nl"
 
-[dependencies]
-vst = "^0.2"
-lerp = "0.2.0"
-libmath = "0.2.1"
-vst-gui = {git = "https://github.com/mikesoylu/rust-vst-gui"}
+[workspace]
+members = ["xtask"]
+
 
 [lib]
 crate-type = ["dylib"]
+
+
+
+[dependencies]
+lerp = "0.2.0"
+libmath = "0.2.1"
+
+nih_plug = { git = "https://github.com/robbert-vdh/nih-plug.git", features = ["assert_process_allocs"] }
+nih_plug_webview = { git = "https://github.com/maxjvh/nih-plug-webview.git" }
+serde = { version = "1.0.160", features = ["derive"] }
+serde_json = "1.0.96"
