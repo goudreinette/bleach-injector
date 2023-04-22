@@ -23,8 +23,6 @@ use std::sync::{Arc};
 #[derive(Deserialize)]
 #[serde(tag = "type")]
 pub enum Action {
-    Init,
-    SetSize { width: u32, height: u32 },
     SetThreshold { value: f32 },
     OpenWebsite
 }
@@ -99,16 +97,6 @@ impl Plugin for BleachInjector {
                                         setter.begin_set_parameter(&params.threshold);
                                         setter.set_parameter_normalized(&params.threshold, value);
                                         setter.end_set_parameter(&params.threshold);
-                                    }
-                                    Action::SetSize { width, height } => {
-                                        ctx.resize(width, height);
-                                    }
-                                    Action::Init => {
-                                        let _ = ctx.send_json(json!({
-                                            "type": "set_size",
-                                            "width": ctx.width.load(Ordering::Relaxed),
-                                            "height": ctx.height.load(Ordering::Relaxed)
-                                        }));
                                     }
                                     Action::OpenWebsite => {
                                         open::that("https://klokpacksix.nl").unwrap();
