@@ -194,4 +194,4 @@ impl Vst3Plugin for BleachInjector {
 }
 
 nih_export_clap!(BleachInjector);
-
+nih_export_vst3!(BleachInjector);
