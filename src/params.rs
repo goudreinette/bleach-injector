@@ -20,11 +20,12 @@ impl Default for BleachInjectorParams {
             threshold: FloatParam::new(
                 "Threshold",
                 1.0,
-                FloatRange::Linear {
-                    min: 0.5,
-                    max: 1.0,
+                FloatRange::Skewed {
+                    min: 0.00,
+                    max: 0.999,
+                    factor: 3.0,
                 },
-            ).with_smoother(SmoothingStyle::Logarithmic(50.0))
+            ).with_smoother(SmoothingStyle::Linear(50.0))
                 .with_value_to_string(Arc::new(|value| {
                 format!("{:.2}", value)
             })),

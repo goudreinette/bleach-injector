@@ -86,7 +86,7 @@ impl Plugin for BleachInjector {
 
     fn editor(&self, _async_executor: AsyncExecutor<Self>) -> Option<Box<dyn Editor>> {
         let params = self.params.clone();
-        let editor = WebViewEditor::new(HTMLSource::String(include_str!("gui.html")), (400, 600))
+        let editor = WebViewEditor::new(HTMLSource::String(include_str!("gui.html")), (500, 500))
             .with_background_color((150, 150, 150, 255))
             .with_developer_mode(true)
             .with_event_loop(move |ctx, setter| {
@@ -164,10 +164,15 @@ impl Plugin for BleachInjector {
     ) -> ProcessStatus {
         for channel_samples in buffer.iter_samples() {
             // Smoothing is optionally built into the parameters themselves
-            let gain = self.params.threshold.smoothed.next();
+            let threshold =  self.params.threshold.smoothed.next();
+            let t = 1.0 - threshold;
 
             for sample in channel_samples {
-                *sample *= gain;
+                if *sample >= 0.0 {
+                    *sample = sample.min(t) / t;
+                } else {
+                    *sample = sample.max(-t) / t;
+                }
             }
         }
 
