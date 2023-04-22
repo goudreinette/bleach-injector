@@ -1,7 +1,6 @@
 use nih_plug::prelude::*;
 
 use std::sync::Arc;
-use std::sync::atomic::{AtomicBool};
 
 
 #[derive(Params)]
@@ -12,7 +11,6 @@ pub struct BleachInjectorParams {
     /// gain parameter is stored as linear gain while the values are displayed in decibels.
     #[id = "threshold"]
     pub threshold: FloatParam,
-    pub threshold_value_changed: Arc<AtomicBool>,
 }
 
 
@@ -30,8 +28,6 @@ impl Default for BleachInjectorParams {
                 .with_value_to_string(Arc::new(|value| {
                 format!("{:.2}", value)
             })),
-
-            threshold_value_changed: Arc::new(AtomicBool::new(false)),
         }
     }
 }

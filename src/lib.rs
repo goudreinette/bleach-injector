@@ -6,6 +6,7 @@ extern crate nih_plug;
 extern crate nih_plug_webview;
 extern crate serde;
 extern crate serde_json;
+extern crate open;
 
 use nih_plug::prelude::*;
 use nih_plug_webview::*;
@@ -19,13 +20,13 @@ use params::BleachInjectorParams;
 use std::sync::{Arc};
 
 
-
 #[derive(Deserialize)]
 #[serde(tag = "type")]
 pub enum Action {
     Init,
     SetSize { width: u32, height: u32 },
     SetThreshold { value: f32 },
+    OpenWebsite
 }
 
 struct BleachInjector {
@@ -85,7 +86,6 @@ impl Plugin for BleachInjector {
 
     fn editor(&self, _async_executor: AsyncExecutor<Self>) -> Option<Box<dyn Editor>> {
         let params = self.params.clone();
-        let threshold_value_changed = self.params.threshold_value_changed.clone();
         let editor = WebViewEditor::new(HTMLSource::String(include_str!("gui.html")), (400, 600))
             .with_background_color((150, 150, 150, 255))
             .with_developer_mode(true)
@@ -110,23 +110,28 @@ impl Plugin for BleachInjector {
                                             "height": ctx.height.load(Ordering::Relaxed)
                                         }));
                                     }
+                                    Action::OpenWebsite => {
+                                        open::that("https://klokpacksix.nl").unwrap();
+                                    }
                                 }
                             } else {
                                 panic!("Invalid action received from web UI.")
                             }
                         }
                         WebviewEvent::FileDropped(path) => println!("File dropped: {:?}", path),
+                        WebviewEvent::ParamValueChanged(param, value) => {
+                            match &param as &str {
+                                "threshold" => {
+                                    let _ = ctx.send_json(json!({
+                                        "type": "set_threshold",
+                                        "value": value
+                                    }));
+                                }
+                                _ => {}
+                            }
+                        }
                         _ => {}
                     }
-                }
-
-                if threshold_value_changed.swap(false, Ordering::Relaxed) {
-                    let _ = ctx.send_json(json!({
-                        "type": "param_change",
-                        "param": "gain",
-                        "value": params.threshold.unmodulated_normalized_value(),
-                        "text": params.threshold.to_string()
-                    }));
                 }
             });
 
@@ -189,5 +194,4 @@ impl Vst3Plugin for BleachInjector {
 }
 
 nih_export_clap!(BleachInjector);
-nih_export_vst3!(BleachInjector);
 
