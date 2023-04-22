@@ -12,21 +12,42 @@
 <script type="x-shader/x-vertex" id="vertex-shader">
     attribute vec3 aPosition;
     attribute vec4 aVertexColor;
+    attribute vec2 aTexCoord;
 
     uniform mat4 uModelViewMatrix;
     uniform mat4 uProjectionMatrix;
 
     varying vec4 vColor;
 
+
     void main(void) {
         vec4 positionVec4 = vec4(aPosition, 1.0);
         gl_Position = uProjectionMatrix * uModelViewMatrix * positionVec4;
         vColor = aVertexColor;
+
     }
 </script>
 
 
-<script type="x-shader/x-fragment" id="fragment-shader">
+<script type="x-shader/x-vertex" id="vertex-shader-post">
+    attribute vec3 aPosition;
+    attribute vec2 aTexCoord;
+
+    varying vec2 vTexCoord;
+
+    void main() {
+        // copy the texcoords
+        vTexCoord = aTexCoord;
+
+        vec4 positionVec4 = vec4(aPosition, 1.0);
+        positionVec4.xy = positionVec4.xy * 2.0 - 1.0;
+
+        gl_Position = positionVec4;
+    }
+</script>
+
+
+<script type="x-shader/x-fragment" id="fragment-shader-liquid">
     precision mediump float;
 
     uniform vec2 iResolution;
@@ -45,6 +66,29 @@
     }
 </script>
 
+<script type="x-shader/x-fragment" id="fragment-shader-post">
+    precision mediump float;
+    
+    varying vec2 vTexCoord;
+
+    uniform sampler2D texture;
+    uniform float noise;
+
+    void main() {
+        vec2 uv = vTexCoord;
+        uv.y = 1.0 - uv.y;
+
+        vec2 offset = vec2(noise * 0.05, 0.0);
+
+        vec3 col;
+        col.r = texture2D(texture, uv + offset).r;
+        col.g = texture2D(texture, uv).g;
+        col.b = texture2D(texture, uv - offset).b;
+
+        gl_FragColor = vec4(col, 1.0);
+    }
+</script>
+
 
 
 <img id="softpack6ix-logo" onclick="openWebsite()"
@@ -55,22 +99,29 @@
 <script>
     let sliderValue = 0; // 0 - 255
     let mouseValue = 0;
-    let shaderProgram;
+
+    let shaderProgramLiquid;
+    let shaderProgramPost;
 
 
 
     let vertexShader = document.getElementById('vertex-shader').text;
-    let fragmentShader = document.getElementById('fragment-shader').text;
+    let vertexShaderPost = document.getElementById('vertex-shader-post').text;
+    let fragmentShaderLiquid = document.getElementById('fragment-shader-liquid').text;
+    let fragmentShaderPost = document.getElementById('fragment-shader-post').text;
+    console.log(fragmentShaderPost)
 
-
+    let pg
 
 
     function setup() {
         createCanvas(500, 500, WEBGL);
         frameRate(30);
 
+        pg = createGraphics(500, 500, WEBGL);
 
-        shaderProgram = createShader(vertexShader, fragmentShader);
+        shaderProgramLiquid = pg.createShader(vertexShader, fragmentShaderLiquid);
+        shaderProgramPost = createShader(vertexShaderPost, fragmentShaderPost);
     }
 
     function mouseDragged(){
@@ -85,52 +136,54 @@
     }
 
     function draw() {
-        background(100, 100, 255);
+        pg.background(100, 100, 255);
 
-        textSize(30);
-        noStroke();
+        pg.textSize(30);
+        pg.noStroke();
+
+        // pg.directionalLight(250, 250, 250, 10, -10, 0.25);
+
 
         //empty syringe
         //0,255,0
-        fill(100,255,100,100);
-        rotateX(0.5);
-        rotateZ(0.5);
-        cylinder(40, 180);
+        pg.fill(100,255,100,100);
+        pg.rotateX(0.5);
+        pg.rotateZ(0.5);
+        pg.cylinder(40, 180);
 
         //extra cylinder
-        fill(150);
-        translate(0, 90, 0);
-        cylinder(30, 20);
+        pg.fill(150);
+        pg.translate(0, 90, 0);
+        pg.cylinder(30, 20);
 
         //needle
-        translate(0, 0, 0);
-        fill(100);
-        cylinder(3, 240);
+        pg.translate(0, 0, 0);
+        pg.fill(100);
+        pg.cylinder(3, 240);
 
         //ass
 
-        fill(
+        pg.fill(
             map(sliderValue, 0, 255, 250, 200),
             map(sliderValue, 0, 255, 128, 100),
             map(sliderValue, 0, 255, 114, 128),
         );
-        translate(0, 280, 0);
-        sphere(200, 24, 24);
-        translate(0, -280, 0);
+        pg.translate(0, 280, 0);
+        pg.sphere(200, 24, 24);
+        pg.translate(0, -280, 0);
 
-        resetShader();
 
         //movable objects
 
         //syringe stick
-        translate(0, -250, 0);
-        translate(0, map(sliderValue, 0, 255, 0, 114), 0);
-        fill(150);
-        cylinder(12, 130);
+        pg.translate(0, -250, 0);
+        pg.translate(0, map(sliderValue, 0, 255, 0, 114), 0);
+        pg.fill(150);
+        pg.cylinder(12, 130);
 
         //syringe hat
-        translate(0, -70, 0);
-        fill(100, 100, 100);
+        pg.translate(0, -70, 0);
+        pg.fill(100, 100, 100);
         if (
             mouseX > 230
             && mouseX < 420
@@ -142,32 +195,64 @@
             && mouseY < height/2
             && mouseIsPressed === true
         ) {
-            cylinder(80,10);
+            pg.cylinder(80,10);
         } else {
-            cylinder(70,10);
+            pg.cylinder(70,10);
         }
-        translate(0, (map(sliderValue, 0, 255, 0, 114))*-1, 0);
-        translate(0,70,0);
+        pg.translate(0, (map(sliderValue, 0, 255, 0, 114))*-1, 0);
+        pg.translate(0,70,0);
 
         //syringe filling
-        shader(shaderProgram);
-        shaderProgram.setUniform('iResolution', [width, height]);
-        shaderProgram.setUniform('iTime', millis() / 1000);
-        shaderProgram.setUniform('iColor', [map(sliderValue, 0, 255, 0, 1), map(sliderValue, 0, 255, 1, 0), 0]);
-        shaderProgram.setUniform('iBlend', map(sliderValue, 0, 255, 0, 1));
-        translate(
+        pg.shader(shaderProgramLiquid);
+        shaderProgramLiquid.setUniform('iResolution', [width, height]);
+        shaderProgramLiquid.setUniform('iTime', millis() / 1000);
+        shaderProgramLiquid.setUniform('iColor', [map(sliderValue, 0, 255, 0, 1), map(sliderValue, 0, 255, 1, 0), 0]);
+        shaderProgramLiquid.setUniform('iBlend', map(sliderValue, 0, 255, 0, 1));
+        pg.translate(
             0,
             map(sliderValue,0,255,171,246),
             0
         );
-        // fill(
-        //     map(sliderValue, 0, 255, 0, 255),
-        //     map(sliderValue, 0, 255, 255, 0),
-        //     0
-        // );
-        cylinder(41,map(sliderValue,0,255,160,10));
-        resetShader();
+        fill(
+            map(sliderValue, 0, 255, 0, 255),
+            map(sliderValue, 0, 255, 255, 0),
+            0
+        );
+        pg.cylinder(41,map(sliderValue,0,255,160,10));
+        pg.resetShader();
+        pg.resetMatrix()
+
+
+        // draw the graphics buffer to the screen
+
+        shader(shaderProgramPost);
+        shaderProgramPost.setUniform('texture', pg);
+        shaderProgramPost.setUniform('noise', getNoiseValue());
+        shaderProgramPost.setUniform('iResolution', [width, height]);
+
+
+        texture(pg);
+        noStroke();
+        rect(-width/2, -height/2, width, height);
+
+
     }
+
+
+
+    function getNoiseValue() {
+        let v = noise(millis()/100);
+        const cutOff = 0.5;
+
+        if(v < cutOff) {
+            return 0;
+        }
+
+        v = pow((v - cutOff)/(1-cutOff), 2);
+
+        return v;
+    }
+
 
 
     /*
