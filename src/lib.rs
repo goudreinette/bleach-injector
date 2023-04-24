@@ -82,7 +82,7 @@ impl Plugin for BleachInjector {
         self.params.clone()
     }
 
-    fn editor(&self, _async_executor: AsyncExecutor<Self>) -> Option<Box<dyn Editor>> {
+    fn editor(self: &mut BleachInjector, _async_executor: AsyncExecutor<Self>) -> Option<Box<dyn Editor>> {
         let params = self.params.clone();
         let editor = WebViewEditor::new(HTMLSource::String(include_str!("gui.html")), (500, 500))
             .with_background_color((150, 150, 150, 255))
