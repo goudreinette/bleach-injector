@@ -1,6 +1,5 @@
 mod params;
 
-
 extern crate math;
 extern crate nih_plug;
 extern crate nih_plug_webview;
@@ -12,7 +11,6 @@ use nih_plug::prelude::*;
 use nih_plug_webview::*;
 use serde::Deserialize;
 use serde_json::json;
-use std::sync::atomic::{Ordering};
 
 use params::BleachInjectorParams;
 
@@ -27,7 +25,7 @@ pub enum Action {
     OpenWebsite
 }
 
-struct BleachInjector {
+pub struct BleachInjector {
     params: Arc<BleachInjectorParams>,
 }
 
@@ -169,7 +167,7 @@ impl Plugin for BleachInjector {
 }
 
 impl ClapPlugin for BleachInjector {
-    const CLAP_ID: &'static str = "com.sokpack6ix.bleach-injector";
+    const CLAP_ID: &'static str = "com.softpack6ix.bleach-injector";
     const CLAP_DESCRIPTION: Option<&'static str> = Some("A short description of your plugin");
     const CLAP_MANUAL_URL: Option<&'static str> = Some(Self::URL);
     const CLAP_SUPPORT_URL: Option<&'static str> = None;
